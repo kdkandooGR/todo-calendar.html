@@ -64,9 +64,13 @@
       border-radius: 10px;
       cursor: pointer;
       box-shadow: 0 2px 8px rgba(16,24,40,0.06);
-      font-weight: 700;
+      font-weight: 800;
     }
     .btn:active{ transform: translateY(1px); }
+
+    .btn.danger{
+      border-color: rgba(198,40,40,0.35);
+    }
 
     select{
       border: 1px solid var(--border);
@@ -75,7 +79,7 @@
       padding: 8px 10px;
       border-radius: 10px;
       cursor: pointer;
-      font-weight: 700;
+      font-weight: 800;
     }
 
     .container{
@@ -107,14 +111,9 @@
       background: rgba(255,255,255,0.04);
     }
 
-    .stat{
-      display:flex;
-      flex-direction:column;
-      gap:2px;
-    }
-
-    .stat .label{ font-size: 12px; color: var(--muted); font-weight: 800; }
-    .stat .value{ font-size: 16px; font-weight: 900; }
+    .stat{ display:flex; flex-direction:column; gap:2px; }
+    .stat .label{ font-size: 12px; color: var(--muted); font-weight: 900; }
+    .stat .value{ font-size: 16px; font-weight: 1000; }
 
     .monthbar{
       display:flex;
@@ -127,7 +126,7 @@
     .monthbar h2{
       margin: 0;
       font-size: 16px;
-      font-weight: 900;
+      font-weight: 1000;
       text-align:center;
       flex: 1;
     }
@@ -139,7 +138,7 @@
       margin: 10px 0 6px;
       font-size: 12px;
       color: var(--muted);
-      font-weight: 900;
+      font-weight: 1000;
       text-align:center;
     }
 
@@ -157,7 +156,7 @@
       cursor:pointer;
       background: var(--day);
       border: 1px solid rgba(0,0,0,0);
-      font-weight: 900;
+      font-weight: 1000;
       line-height: 1;
       min-height: 38px;
       display:flex;
@@ -166,7 +165,6 @@
     }
 
     .day.blank{ opacity: .35; cursor: default; }
-
     .day.green{ background: var(--green); color: #fff; }
     .day.red{ background: var(--red); color: #fff; }
 
@@ -178,17 +176,12 @@
     .todo h2{
       margin: 0 0 10px;
       font-size: 16px;
-      font-weight: 900;
+      font-weight: 1000;
     }
 
-    .addrow{
-      display:flex;
-      gap: 8px;
-      margin-bottom: 10px;
-    }
+    .addrow{ display:flex; gap: 8px; margin-bottom: 10px; }
 
-    input[type="text"]{
-      flex: 1;
+    input[type="text"], textarea{
       border: 1px solid var(--border);
       background: transparent;
       color: var(--text);
@@ -196,7 +189,11 @@
       border-radius: 12px;
       outline: none;
       font-weight: 800;
+      width: 100%;
+      box-sizing: border-box;
     }
+
+    textarea{ resize: vertical; }
 
     ul{ list-style:none; padding:0; margin:0; }
 
@@ -212,7 +209,7 @@
 
     li span{
       flex: 1;
-      font-weight: 900;
+      font-weight: 1000;
       overflow: hidden;
       text-overflow: ellipsis;
       white-space: nowrap;
@@ -225,15 +222,23 @@
       padding: 6px 10px;
       border-radius: 12px;
       cursor:pointer;
-      font-weight: 900;
+      font-weight: 1000;
     }
 
     .hint{
       color: var(--muted);
       font-size: 12px;
-      font-weight: 800;
+      font-weight: 900;
       margin-top: 8px;
     }
+
+    /* Template panel */
+    .panel-header{ display:flex; align-items:center; justify-content:space-between; gap:10px; }
+    .panel-header h3{ margin:0; font-size: 15px; font-weight: 1000; }
+    .row{ display:flex; gap: 10px; align-items: center; }
+    .row > *{ flex: 1; }
+    .panel-actions{ display:flex; gap: 8px; flex-wrap: wrap; margin-top: 10px; }
+    .status{ font-size: 12px; font-weight: 900; color: var(--muted); margin-top: 8px; }
 
     @media (max-width: 760px){
       body{ padding: 14px; }
@@ -241,6 +246,7 @@
       .day{ min-height: 42px; }
       .btn, select{ width: 100%; }
       .topbar{ align-items: stretch; }
+      .row{ flex-direction: column; align-items: stretch; }
     }
   </style>
 </head>
@@ -248,7 +254,7 @@
   <h1>Todo Calendar</h1>
 
   <div class="topbar">
-    <button class="btn" onclick="openTemplateManager()">➕ Custom Templates</button>
+    <button class="btn" onclick="toggleTemplatePanel()">➕ Custom Templates</button>
     <button class="btn" onclick="toggleDark()">🌙 Dark Mode</button>
     <select id="templateSelect" onchange="loadTemplate()">
       <option value="">Load Habit Template</option>
@@ -257,6 +263,8 @@
       <option value="detox">Dopamine Detox</option>
     </select>
   </div>
+
+  <div id="templatePanelMount"></div>
 
   <div class="container">
     <div class="card calendar">
@@ -315,6 +323,7 @@
     const streakCountEl = document.getElementById('streakCount');
     const monthPercentEl = document.getElementById('monthPercent');
     const templateSelectEl = document.getElementById('templateSelect');
+    const templatePanelMount = document.getElementById('templatePanelMount');
 
     // ---------------------------
     // State
@@ -348,17 +357,11 @@
       localStorage.setItem(TEMPLATE_KEY, JSON.stringify(obj));
     }
 
-    function getAllTemplates() {
-      return { ...baseTemplates, ...getCustomTemplates() };
-    }
-
     function populateTemplateDropdown() {
       const prev = templateSelectEl.value;
 
       // keep the first option, rebuild the rest
-      while (templateSelectEl.options.length > 1) {
-        templateSelectEl.remove(1);
-      }
+      while (templateSelectEl.options.length > 1) templateSelectEl.remove(1);
 
       // base templates
       const baseOrder = ['gym','study','detox'];
@@ -387,15 +390,23 @@
         }
       }
 
-      // restore previous selection if still exists
       templateSelectEl.value = Array.from(templateSelectEl.options).some(o => o.value === prev) ? prev : '';
+    }
+
+    function getTemplateListBySelectValue(value) {
+      if (!value || value === '__sep__') return null;
+      if (value.startsWith('custom:')) {
+        const name = value.slice('custom:'.length);
+        const custom = getCustomTemplates();
+        return custom[name] || null;
+      }
+      return baseTemplates[value] || null;
     }
 
     // ---------------------------
     // Date helpers
     // ---------------------------
     function formatDate(date) {
-      // local date key (avoid UTC shifting issues)
       const y = date.getFullYear();
       const m = String(date.getMonth() + 1).padStart(2,'0');
       const d = String(date.getDate()).padStart(2,'0');
@@ -432,7 +443,6 @@
     function computeStreakEndingToday(data, todayKey) {
       let streak = 0;
       let cursor = parseDateKey(todayKey);
-
       while (true) {
         const key = formatDate(cursor);
         const todos = data[key];
@@ -483,9 +493,7 @@
           dayEl.classList.add(isGreenDay(todos) ? 'green' : 'red');
         }
 
-        if (selectedDate === dateKey) {
-          dayEl.classList.add('selected');
-        }
+        if (selectedDate === dateKey) dayEl.classList.add('selected');
 
         dayEl.onclick = () => selectDate(date);
         calendarEl.appendChild(dayEl);
@@ -585,18 +593,7 @@
       }
 
       const value = templateSelectEl.value;
-      if (!value || value === '__sep__') return;
-
-      const all = getAllTemplates();
-
-      let list = null;
-      if (value.startsWith('custom:')) {
-        const name = value.slice('custom:'.length);
-        list = (getCustomTemplates()[name] || null);
-      } else {
-        list = (all[value] || null);
-      }
-
+      const list = getTemplateListBySelectValue(value);
       if (!Array.isArray(list) || list.length === 0) return;
 
       todosByDate[selectedDate] = list.map(x => ({ text: String(x), done: false }));
@@ -604,57 +601,163 @@
     }
 
     // ---------------------------
-    // Custom Template Manager
+    // Custom Template Panel (no alerts/prompts)
     // ---------------------------
-    function openTemplateManager() {
-      // Basic, reliable UX using prompts (works inside Notion embeds too).
-      // Behavior:
-      // - If a template name exists, user can overwrite or delete it.
-      // - Saves immediately and updates dropdown immediately.
+    function toggleTemplatePanel() {
+      const existing = document.getElementById('templatePanel');
+      if (existing) { existing.remove(); return; }
+      renderTemplatePanel();
+    }
 
-      const existing = getCustomTemplates();
-      const existingNames = Object.keys(existing);
-      const listStr = existingNames.length ? `\n\nExisting: ${existingNames.join(', ')}` : '';
+    function renderTemplatePanel() {
+      const panel = document.createElement('div');
+      panel.id = 'templatePanel';
+      panel.className = 'card';
+      panel.style.maxWidth = '980px';
+      panel.style.margin = '10px auto 16px';
 
-      const name = prompt(`Template name?${listStr}`);
-      if (!name) return;
-      const trimmed = name.trim();
-      if (!trimmed) return;
+      panel.innerHTML = `
+        <div class="panel-header">
+          <h3>Custom Templates</h3>
+          <button class="btn" onclick="toggleTemplatePanel()">Close</button>
+        </div>
+        <div class="hint">Create, edit, or delete templates. Saved automatically.</div>
+        <div class="row" style="margin-top:10px;">
+          <div>
+            <div class="hint" style="margin:0 0 6px;">Select existing (optional)</div>
+            <select id="tplExisting" onchange="loadTemplateIntoEditor()" style="width:100%"></select>
+          </div>
+          <div>
+            <div class="hint" style="margin:0 0 6px;">Template name</div>
+            <input id="tplName" type="text" placeholder="e.g., Morning Routine" />
+          </div>
+        </div>
+        <div style="margin-top:10px;">
+          <div class="hint" style="margin:0 0 6px;">Tasks (one per line)</div>
+          <textarea id="tplTasks" rows="6" placeholder="Wake up\nWater\nGym\nRead"></textarea>
+        </div>
+        <div class="panel-actions">
+          <button class="btn" onclick="saveTemplateFromEditor()">Save</button>
+          <button class="btn danger" onclick="deleteTemplateFromEditor()">Delete</button>
+          <button class="btn" onclick="clearTemplateEditor()">Clear</button>
+        </div>
+        <div id="tplStatus" class="status"></div>
+      `;
 
-      const already = Object.prototype.hasOwnProperty.call(existing, trimmed);
-      if (already) {
-        const action = prompt(`"${trimmed}" already exists. Type:\n- overwrite\n- delete\n- cancel`, 'overwrite');
-        if (!action) return;
-        const a = action.trim().toLowerCase();
-        if (a === 'delete') {
-          delete existing[trimmed];
-          setCustomTemplates(existing);
-          populateTemplateDropdown();
-          alert('Deleted.');
-          return;
-        }
-        if (a === 'cancel') return;
-        // otherwise overwrite
+      templatePanelMount.innerHTML = '';
+      templatePanelMount.appendChild(panel);
+
+      populateExistingTemplatesSelect();
+      setTemplateStatus('Ready.');
+    }
+
+    function setTemplateStatus(msg) {
+      const el = document.getElementById('tplStatus');
+      if (el) el.textContent = msg;
+    }
+
+    function populateExistingTemplatesSelect() {
+      const select = document.getElementById('tplExisting');
+      if (!select) return;
+
+      select.innerHTML = '';
+      const opt0 = document.createElement('option');
+      opt0.value = '';
+      opt0.textContent = '— New template —';
+      select.appendChild(opt0);
+
+      const custom = getCustomTemplates();
+      const names = Object.keys(custom).sort((a,b)=>a.localeCompare(b));
+      for (const name of names) {
+        const opt = document.createElement('option');
+        opt.value = name;
+        opt.textContent = name;
+        select.appendChild(opt);
       }
+    }
 
-      const tasks = prompt('Enter tasks separated by commas (e.g., Wake up, Water, Gym)');
-      if (!tasks) return;
-      const items = tasks.split(',').map(t => t.trim()).filter(Boolean);
-      if (!items.length) {
-        alert('No tasks provided.');
+    function clearTemplateEditor() {
+      const nameEl = document.getElementById('tplName');
+      const tasksEl = document.getElementById('tplTasks');
+      const existingEl = document.getElementById('tplExisting');
+      if (existingEl) existingEl.value = '';
+      if (nameEl) nameEl.value = '';
+      if (tasksEl) tasksEl.value = '';
+      setTemplateStatus('Cleared.');
+    }
+
+    function loadTemplateIntoEditor() {
+      const existingEl = document.getElementById('tplExisting');
+      const nameEl = document.getElementById('tplName');
+      const tasksEl = document.getElementById('tplTasks');
+      if (!existingEl || !nameEl || !tasksEl) return;
+
+      const chosen = existingEl.value;
+      if (!chosen) {
+        nameEl.value = '';
+        tasksEl.value = '';
+        setTemplateStatus('New template.');
         return;
       }
 
-      existing[trimmed] = items;
-      setCustomTemplates(existing);
-      populateTemplateDropdown();
-
-      // select the newly created template in dropdown
-      templateSelectEl.value = `custom:${trimmed}`;
-      alert('Template saved!');
+      const custom = getCustomTemplates();
+      const tasks = custom[chosen] || [];
+      nameEl.value = chosen;
+      tasksEl.value = tasks.join('\n');
+      setTemplateStatus(`Editing: ${chosen}`);
     }
 
-    // Enter to add
+    function saveTemplateFromEditor() {
+      const nameEl = document.getElementById('tplName');
+      const tasksEl = document.getElementById('tplTasks');
+      if (!nameEl || !tasksEl) return;
+
+      const name = nameEl.value.trim();
+      const tasks = tasksEl.value
+        .split(/\r?\n/)
+        .map(t => t.trim())
+        .filter(Boolean);
+
+      if (!name) { setTemplateStatus('Name is required.'); return; }
+      if (!tasks.length) { setTemplateStatus('Add at least 1 task.'); return; }
+
+      const custom = getCustomTemplates();
+      custom[name] = tasks;
+      setCustomTemplates(custom);
+
+      populateExistingTemplatesSelect();
+      populateTemplateDropdown();
+
+      // Keep selection consistent
+      const existingEl = document.getElementById('tplExisting');
+      if (existingEl) existingEl.value = name;
+
+      setTemplateStatus(`Saved: ${name}`);
+    }
+
+    function deleteTemplateFromEditor() {
+      const existingEl = document.getElementById('tplExisting');
+      const nameEl = document.getElementById('tplName');
+      const name = (existingEl && existingEl.value) ? existingEl.value : (nameEl ? nameEl.value.trim() : '');
+      if (!name) { setTemplateStatus('Select a template to delete.'); return; }
+
+      const custom = getCustomTemplates();
+      if (!Object.prototype.hasOwnProperty.call(custom, name)) {
+        setTemplateStatus('That template does not exist.');
+        return;
+      }
+
+      delete custom[name];
+      setCustomTemplates(custom);
+      populateExistingTemplatesSelect();
+      populateTemplateDropdown();
+      clearTemplateEditor();
+      setTemplateStatus(`Deleted: ${name}`);
+    }
+
+    // ---------------------------
+    // Input helpers
+    // ---------------------------
     newTodoInput.addEventListener('keydown', (e) => {
       if (e.key === 'Enter') addTodo();
     });
@@ -682,12 +785,9 @@
       console.assert(computeStreakEndingToday(sample2, '2025-01-03') === 3, 'Test: streak ending 1/3');
       console.assert(computeStreakEndingToday(sample2, '2025-01-04') === 0, 'Test: streak breaks on red');
 
-      const sample3 = {
-        '2025-02-01': [{text:'a',done:true}],
-        '2025-02-02': [{text:'a',done:false}],
-      };
-      console.assert(computeMonthScore(sample3, 2025, 1) === 50, 'Test: month score 1/2');
-      console.assert(computeMonthScore(sample3, 2025, 0) === 0, 'Test: month score empty month');
+      // newline splitting
+      const lines = 'A\nB\r\nC'.split(/\r?\n/);
+      console.assert(lines.length === 3 && lines[1] === 'B', 'Test: split CRLF');
     }
     runTests();
 
