@@ -1,0 +1,176 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Todo Calendar</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background: #f4f6f8;
+      margin: 0;
+      padding: 20px;
+    }
+    h1 {
+      text-align: center;
+    }
+    .container {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 20px;
+      max-width: 1000px;
+      margin: auto;
+    }
+    .calendar, .todo {
+      background: white;
+      padding: 15px;
+      border-radius: 8px;
+      box-shadow: 0 2px 6px rgba(0,0,0,0.1);
+    }
+    .calendar-grid {
+      display: grid;
+      grid-template-columns: repeat(7, 1fr);
+      gap: 5px;
+      margin-top: 10px;
+    }
+    .day {
+      padding: 10px;
+      text-align: center;
+      border-radius: 6px;
+      cursor: pointer;
+      background: #e0e0e0;
+    }
+    .day.green { background: #4caf50; color: white; }
+    .day.red { background: #f44336; color: white; }
+    .day.selected { outline: 3px solid #000; }
+    ul { list-style: none; padding: 0; }
+    li {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 8px;
+    }
+    button {
+      cursor: pointer;
+    }
+    input[type="text"] {
+      width: 70%;
+      padding: 5px;
+    }
+  </style>
+</head>
+<body>
+  <h1>Todo Calendar</h1>
+  <div class="container">
+    <div class="calendar">
+      <h2 id="monthTitle"></h2>
+      <div class="calendar-grid" id="calendar"></div>
+    </div>
+    <div class="todo">
+      <h2 id="selectedDateTitle">Select a day</h2>
+      <div>
+        <input type="text" id="newTodo" placeholder="New task" />
+        <button onclick="addTodo()">Add</button>
+      </div>
+      <ul id="todoList"></ul>
+    </div>
+  </div>
+
+  <script>
+    const calendarEl = document.getElementById('calendar');
+    const monthTitle = document.getElementById('monthTitle');
+    const selectedDateTitle = document.getElementById('selectedDateTitle');
+    const todoListEl = document.getElementById('todoList');
+    const newTodoInput = document.getElementById('newTodo');
+
+    let selectedDate = null;
+    const todosByDate = JSON.parse(localStorage.getItem('todosByDate') || '{}');
+
+    const today = new Date();
+    const year = today.getFullYear();
+    const month = today.getMonth();
+
+    function formatDate(date) {
+      return date.toISOString().split('T')[0];
+    }
+
+    function renderCalendar() {
+      calendarEl.innerHTML = '';
+      const firstDay = new Date(year, month, 1);
+      const lastDay = new Date(year, month + 1, 0);
+
+      monthTitle.textContent = firstDay.toLocaleString('default', { month: 'long', year: 'numeric' });
+
+      for (let d = 1; d <= lastDay.getDate(); d++) {
+        const date = new Date(year, month, d);
+        const dateKey = formatDate(date);
+        const dayEl = document.createElement('div');
+        dayEl.textContent = d;
+        dayEl.className = 'day';
+
+        const todos = todosByDate[dateKey];
+        if (todos && todos.length > 0) {
+          const allDone = todos.every(t => t.done);
+          dayEl.classList.add(allDone ? 'green' : 'red');
+        }
+
+        dayEl.onclick = () => selectDate(date);
+        calendarEl.appendChild(dayEl);
+      }
+    }
+
+    function selectDate(date) {
+      selectedDate = formatDate(date);
+      selectedDateTitle.textContent = selectedDate;
+      renderTodos();
+    }
+
+    function renderTodos() {
+      todoListEl.innerHTML = '';
+      const todos = todosByDate[selectedDate] || [];
+
+      todos.forEach((todo, index) => {
+        const li = document.createElement('li');
+        const checkbox = document.createElement('input');
+        checkbox.type = 'checkbox';
+        checkbox.checked = todo.done;
+        checkbox.onchange = () => {
+          todo.done = checkbox.checked;
+          save();
+        };
+
+        const span = document.createElement('span');
+        span.textContent = todo.text;
+
+        const delBtn = document.createElement('button');
+        delBtn.textContent = 'X';
+        delBtn.onclick = () => {
+          todos.splice(index, 1);
+          save();
+        };
+
+        li.appendChild(checkbox);
+        li.appendChild(span);
+        li.appendChild(delBtn);
+        todoListEl.appendChild(li);
+      });
+    }
+
+    function addTodo() {
+      if (!selectedDate || !newTodoInput.value.trim()) return;
+      todosByDate[selectedDate] = todosByDate[selectedDate] || [];
+      todosByDate[selectedDate].push({ text: newTodoInput.value, done: false });
+      newTodoInput.value = '';
+      save();
+    }
+
+    function save() {
+      localStorage.setItem('todosByDate', JSON.stringify(todosByDate));
+      renderTodos();
+      renderCalendar();
+    }
+
+    renderCalendar();
+  </script>
+</body>
+</html>
