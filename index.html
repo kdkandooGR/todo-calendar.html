@@ -5,124 +5,501 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Todo Calendar</title>
   <style>
-    body {
-      font-family: Arial, sans-serif;
-      background: #f4f6f8;
+    :root{
+      --bg:#f4f6f8;
+      --card:#ffffff;
+      --text:#111;
+      --muted:#667085;
+      --border:#e5e7eb;
+      --day:#eceff3;
+      --shadow: 0 8px 24px rgba(16,24,40,0.08);
+      --green:#2e7d32;
+      --red:#c62828;
+      --accent:#111;
+    }
+
+    body{
+      font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
+      background: var(--bg);
+      color: var(--text);
       margin: 0;
       padding: 20px;
+      transition: background .2s ease, color .2s ease;
     }
-    h1 {
-      text-align: center;
+
+    body.dark{
+      --bg:#0b0f14;
+      --card:#121826;
+      --text:#eef2ff;
+      --muted:#a5b4fc;
+      --border:#24324a;
+      --day:#1d2a3d;
+      --shadow: 0 12px 32px rgba(0,0,0,0.45);
+      --green:#2e7d32;
+      --red:#c62828;
+      --accent:#eef2ff;
     }
-    .container {
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 20px;
-      max-width: 1000px;
-      margin: auto;
+
+    h1{
+      text-align:center;
+      margin: 8px 0 14px;
+      font-size: 22px;
+      letter-spacing: .2px;
     }
-    .calendar, .todo {
-      background: white;
-      padding: 15px;
-      border-radius: 8px;
-      box-shadow: 0 2px 6px rgba(0,0,0,0.1);
+
+    .topbar{
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      gap: 10px;
+      flex-wrap: wrap;
+      margin-bottom: 14px;
     }
-    .calendar-grid {
-      display: grid;
-      grid-template-columns: repeat(7, 1fr);
-      gap: 5px;
-      margin-top: 10px;
-    }
-    .day {
-      padding: 10px;
-      text-align: center;
-      border-radius: 6px;
+
+    .btn{
+      border: 1px solid var(--border);
+      background: var(--card);
+      color: var(--text);
+      padding: 8px 10px;
+      border-radius: 10px;
       cursor: pointer;
-      background: #e0e0e0;
+      box-shadow: 0 2px 8px rgba(16,24,40,0.06);
+      font-weight: 700;
     }
-    .day.green { background: #4caf50; color: white; }
-    .day.red { background: #f44336; color: white; }
-    .day.selected { outline: 3px solid #000; }
-    ul { list-style: none; padding: 0; }
-    li {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
+    .btn:active{ transform: translateY(1px); }
+
+    select{
+      border: 1px solid var(--border);
+      background: var(--card);
+      color: var(--text);
+      padding: 8px 10px;
+      border-radius: 10px;
+      cursor: pointer;
+      font-weight: 700;
+    }
+
+    .container{
+      display:grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 16px;
+      max-width: 980px;
+      margin: 0 auto;
+    }
+
+    .card{
+      background: var(--card);
+      border: 1px solid var(--border);
+      padding: 14px;
+      border-radius: 16px;
+      box-shadow: var(--shadow);
+      min-width: 0;
+    }
+
+    .stats{
+      display:flex;
+      justify-content:space-between;
+      gap: 10px;
+      align-items:center;
+      margin-bottom: 10px;
+      padding: 10px;
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      background: rgba(255,255,255,0.04);
+    }
+
+    .stat{
+      display:flex;
+      flex-direction:column;
+      gap:2px;
+    }
+
+    .stat .label{ font-size: 12px; color: var(--muted); font-weight: 800; }
+    .stat .value{ font-size: 16px; font-weight: 900; }
+
+    .monthbar{
+      display:flex;
+      justify-content:space-between;
+      align-items:center;
+      gap: 10px;
+      margin-bottom: 10px;
+    }
+
+    .monthbar h2{
+      margin: 0;
+      font-size: 16px;
+      font-weight: 900;
+      text-align:center;
+      flex: 1;
+    }
+
+    .cal-head{
+      display:grid;
+      grid-template-columns: repeat(7, 1fr);
+      gap: 6px;
+      margin: 10px 0 6px;
+      font-size: 12px;
+      color: var(--muted);
+      font-weight: 900;
+      text-align:center;
+    }
+
+    .calendar-grid{
+      display:grid;
+      grid-template-columns: repeat(7, 1fr);
+      gap: 6px;
+    }
+
+    .day{
+      user-select:none;
+      padding: 10px 8px;
+      text-align:center;
+      border-radius: 12px;
+      cursor:pointer;
+      background: var(--day);
+      border: 1px solid rgba(0,0,0,0);
+      font-weight: 900;
+      line-height: 1;
+      min-height: 38px;
+      display:flex;
+      align-items:center;
+      justify-content:center;
+    }
+
+    .day.blank{ opacity: .35; cursor: default; }
+
+    .day.green{ background: var(--green); color: #fff; }
+    .day.red{ background: var(--red); color: #fff; }
+
+    .day.selected{
+      outline: 3px solid var(--accent);
+      outline-offset: 2px;
+    }
+
+    .todo h2{
+      margin: 0 0 10px;
+      font-size: 16px;
+      font-weight: 900;
+    }
+
+    .addrow{
+      display:flex;
+      gap: 8px;
+      margin-bottom: 10px;
+    }
+
+    input[type="text"]{
+      flex: 1;
+      border: 1px solid var(--border);
+      background: transparent;
+      color: var(--text);
+      padding: 10px 12px;
+      border-radius: 12px;
+      outline: none;
+      font-weight: 800;
+    }
+
+    ul{ list-style:none; padding:0; margin:0; }
+
+    li{
+      display:flex;
+      align-items:center;
+      gap: 10px;
+      padding: 10px;
+      border: 1px solid var(--border);
+      border-radius: 14px;
       margin-bottom: 8px;
     }
-    button {
-      cursor: pointer;
+
+    li span{
+      flex: 1;
+      font-weight: 900;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
     }
-    input[type="text"] {
-      width: 70%;
-      padding: 5px;
+
+    .del{
+      border: 1px solid var(--border);
+      background: transparent;
+      color: var(--text);
+      padding: 6px 10px;
+      border-radius: 12px;
+      cursor:pointer;
+      font-weight: 900;
+    }
+
+    .hint{
+      color: var(--muted);
+      font-size: 12px;
+      font-weight: 800;
+      margin-top: 8px;
+    }
+
+    @media (max-width: 760px){
+      body{ padding: 14px; }
+      .container{ grid-template-columns: 1fr; }
+      .day{ min-height: 42px; }
+      .btn, select{ width: 100%; }
+      .topbar{ align-items: stretch; }
     }
   </style>
 </head>
 <body>
   <h1>Todo Calendar</h1>
+
+  <div class="topbar">
+    <button class="btn" onclick="openTemplateManager()">➕ Custom Templates</button>
+    <button class="btn" onclick="toggleDark()">🌙 Dark Mode</button>
+    <select id="templateSelect" onchange="loadTemplate()">
+      <option value="">Load Habit Template</option>
+      <option value="gym">Gym Day</option>
+      <option value="study">Study Day</option>
+      <option value="detox">Dopamine Detox</option>
+    </select>
+  </div>
+
   <div class="container">
-    <div class="calendar">
-      <h2 id="monthTitle"></h2>
+    <div class="card calendar">
+      <div class="stats">
+        <div class="stat">
+          <div class="label">🔥 STREAK (ending today)</div>
+          <div class="value"><span id="streakCount">0</span> days</div>
+        </div>
+        <div class="stat" style="text-align:right;">
+          <div class="label">📊 MONTH SCORE (viewed month)</div>
+          <div class="value"><span id="monthPercent">0%</span></div>
+        </div>
+      </div>
+
+      <div class="monthbar">
+        <button class="btn" onclick="prevMonth()">◀</button>
+        <h2 id="monthTitle"></h2>
+        <button class="btn" onclick="nextMonth()">▶</button>
+      </div>
+
+      <div class="cal-head">
+        <div>M</div><div>T</div><div>W</div><div>T</div><div>F</div><div>S</div><div>S</div>
+      </div>
+
       <div class="calendar-grid" id="calendar"></div>
+      <div class="hint">Tip: a day turns 🟢 only when every task for that date is checked.</div>
     </div>
-    <div class="todo">
+
+    <div class="card todo">
       <h2 id="selectedDateTitle">Select a day</h2>
-      <div>
+      <div class="addrow">
         <input type="text" id="newTodo" placeholder="New task" />
-        <button onclick="addTodo()">Add</button>
+        <button class="btn" onclick="addTodo()">Add</button>
       </div>
       <ul id="todoList"></ul>
+      <div class="hint">Templates overwrite the selected day's list.</div>
     </div>
   </div>
 
   <script>
+    // ---------------------------
+    // Storage
+    // ---------------------------
+    const STORAGE_KEY = 'todosByDate';
+    const DARK_KEY = 'todoCalendarDarkMode';
+    const TEMPLATE_KEY = 'customHabitTemplates';
+
+    // ---------------------------
+    // Elements
+    // ---------------------------
     const calendarEl = document.getElementById('calendar');
     const monthTitle = document.getElementById('monthTitle');
     const selectedDateTitle = document.getElementById('selectedDateTitle');
     const todoListEl = document.getElementById('todoList');
     const newTodoInput = document.getElementById('newTodo');
+    const streakCountEl = document.getElementById('streakCount');
+    const monthPercentEl = document.getElementById('monthPercent');
+    const templateSelectEl = document.getElementById('templateSelect');
 
-    let selectedDate = null;
-    const todosByDate = JSON.parse(localStorage.getItem('todosByDate') || '{}');
+    // ---------------------------
+    // State
+    // ---------------------------
+    let selectedDate = null; // YYYY-MM-DD
+    const todosByDate = JSON.parse(localStorage.getItem(STORAGE_KEY) || '{}');
 
-    const today = new Date();
-    const year = today.getFullYear();
-    const month = today.getMonth();
+    // viewed month
+    let current = new Date();
+    current.setHours(0,0,0,0);
 
-    function formatDate(date) {
-      return date.toISOString().split('T')[0];
+    // apply dark mode preference
+    if (localStorage.getItem(DARK_KEY) === '1') {
+      document.body.classList.add('dark');
     }
 
+    // ---------------------------
+    // Templates
+    // ---------------------------
+    const baseTemplates = {
+      gym: ["Workout", "Protein", "10k Steps"],
+      study: ["Study 2h", "No phone", "Review notes"],
+      detox: ["No social media", "Meditate", "Read book"]
+    };
+
+    function getCustomTemplates() {
+      return JSON.parse(localStorage.getItem(TEMPLATE_KEY) || '{}');
+    }
+
+    function setCustomTemplates(obj) {
+      localStorage.setItem(TEMPLATE_KEY, JSON.stringify(obj));
+    }
+
+    function getAllTemplates() {
+      return { ...baseTemplates, ...getCustomTemplates() };
+    }
+
+    function populateTemplateDropdown() {
+      const prev = templateSelectEl.value;
+
+      // keep the first option, rebuild the rest
+      while (templateSelectEl.options.length > 1) {
+        templateSelectEl.remove(1);
+      }
+
+      // base templates
+      const baseOrder = ['gym','study','detox'];
+      for (const key of baseOrder) {
+        const opt = document.createElement('option');
+        opt.value = key;
+        opt.textContent = ({gym:'Gym Day', study:'Study Day', detox:'Dopamine Detox'})[key] || key;
+        templateSelectEl.appendChild(opt);
+      }
+
+      // custom templates
+      const custom = getCustomTemplates();
+      const customNames = Object.keys(custom).sort((a,b)=>a.localeCompare(b));
+      if (customNames.length) {
+        const sep = document.createElement('option');
+        sep.value = '__sep__';
+        sep.textContent = '──────────';
+        sep.disabled = true;
+        templateSelectEl.appendChild(sep);
+
+        for (const name of customNames) {
+          const opt = document.createElement('option');
+          opt.value = `custom:${name}`;
+          opt.textContent = `⭐ ${name}`;
+          templateSelectEl.appendChild(opt);
+        }
+      }
+
+      // restore previous selection if still exists
+      templateSelectEl.value = Array.from(templateSelectEl.options).some(o => o.value === prev) ? prev : '';
+    }
+
+    // ---------------------------
+    // Date helpers
+    // ---------------------------
+    function formatDate(date) {
+      // local date key (avoid UTC shifting issues)
+      const y = date.getFullYear();
+      const m = String(date.getMonth() + 1).padStart(2,'0');
+      const d = String(date.getDate()).padStart(2,'0');
+      return `${y}-${m}-${d}`;
+    }
+
+    function parseDateKey(key) {
+      const [y,m,d] = key.split('-').map(Number);
+      const dt = new Date(y, m-1, d);
+      dt.setHours(0,0,0,0);
+      return dt;
+    }
+
+    function daysInMonth(year, monthIndex) {
+      return new Date(year, monthIndex + 1, 0).getDate();
+    }
+
+    // ---------------------------
+    // Pure computations (testable)
+    // ---------------------------
+    function isGreenDay(todos) {
+      return Array.isArray(todos) && todos.length > 0 && todos.every(t => t.done);
+    }
+
+    function computeMonthScore(data, year, monthIndex) {
+      const prefix = `${year}-${String(monthIndex+1).padStart(2,'0')}-`;
+      const keys = Object.keys(data).filter(k => k.startsWith(prefix));
+      const daysWithTasks = keys.filter(k => Array.isArray(data[k]) && data[k].length > 0);
+      if (daysWithTasks.length === 0) return 0;
+      const greenDays = daysWithTasks.filter(k => isGreenDay(data[k])).length;
+      return Math.round((greenDays / daysWithTasks.length) * 100);
+    }
+
+    function computeStreakEndingToday(data, todayKey) {
+      let streak = 0;
+      let cursor = parseDateKey(todayKey);
+
+      while (true) {
+        const key = formatDate(cursor);
+        const todos = data[key];
+        if (!isGreenDay(todos)) break;
+        streak += 1;
+        cursor.setDate(cursor.getDate() - 1);
+      }
+      return streak;
+    }
+
+    // ---------------------------
+    // Rendering
+    // ---------------------------
     function renderCalendar() {
       calendarEl.innerHTML = '';
+
+      const year = current.getFullYear();
+      const month = current.getMonth();
+
       const firstDay = new Date(year, month, 1);
-      const lastDay = new Date(year, month + 1, 0);
+      firstDay.setHours(0,0,0,0);
 
       monthTitle.textContent = firstDay.toLocaleString('default', { month: 'long', year: 'numeric' });
 
-      for (let d = 1; d <= lastDay.getDate(); d++) {
+      // Monday-first layout
+      const jsDow = firstDay.getDay();
+      const mondayFirst = (jsDow + 6) % 7;
+
+      for (let i = 0; i < mondayFirst; i++) {
+        const blank = document.createElement('div');
+        blank.className = 'day blank';
+        blank.textContent = '';
+        calendarEl.appendChild(blank);
+      }
+
+      const totalDays = daysInMonth(year, month);
+      for (let d = 1; d <= totalDays; d++) {
         const date = new Date(year, month, d);
+        date.setHours(0,0,0,0);
         const dateKey = formatDate(date);
+
         const dayEl = document.createElement('div');
         dayEl.textContent = d;
         dayEl.className = 'day';
 
         const todos = todosByDate[dateKey];
-        if (todos && todos.length > 0) {
-          const allDone = todos.every(t => t.done);
-          dayEl.classList.add(allDone ? 'green' : 'red');
+        if (Array.isArray(todos) && todos.length > 0) {
+          dayEl.classList.add(isGreenDay(todos) ? 'green' : 'red');
+        }
+
+        if (selectedDate === dateKey) {
+          dayEl.classList.add('selected');
         }
 
         dayEl.onclick = () => selectDate(date);
         calendarEl.appendChild(dayEl);
       }
+
+      const score = computeMonthScore(todosByDate, year, month);
+      monthPercentEl.textContent = `${score}%`;
     }
 
     function selectDate(date) {
       selectedDate = formatDate(date);
       selectedDateTitle.textContent = selectedDate;
       renderTodos();
+      renderCalendar();
     }
 
     function renderTodos() {
@@ -131,9 +508,10 @@
 
       todos.forEach((todo, index) => {
         const li = document.createElement('li');
+
         const checkbox = document.createElement('input');
         checkbox.type = 'checkbox';
-        checkbox.checked = todo.done;
+        checkbox.checked = !!todo.done;
         checkbox.onchange = () => {
           todo.done = checkbox.checked;
           save();
@@ -141,9 +519,11 @@
 
         const span = document.createElement('span');
         span.textContent = todo.text;
+        span.title = todo.text;
 
         const delBtn = document.createElement('button');
-        delBtn.textContent = 'X';
+        delBtn.className = 'del';
+        delBtn.textContent = 'Delete';
         delBtn.onclick = () => {
           todos.splice(index, 1);
           save();
@@ -156,21 +536,165 @@
       });
     }
 
+    // ---------------------------
+    // Actions
+    // ---------------------------
     function addTodo() {
-      if (!selectedDate || !newTodoInput.value.trim()) return;
+      if (!selectedDate) return;
+      const text = newTodoInput.value.trim();
+      if (!text) return;
+
       todosByDate[selectedDate] = todosByDate[selectedDate] || [];
-      todosByDate[selectedDate].push({ text: newTodoInput.value, done: false });
+      todosByDate[selectedDate].push({ text, done: false });
       newTodoInput.value = '';
       save();
     }
 
+    function calculateStats() {
+      const todayKey = formatDate(new Date());
+      const streak = computeStreakEndingToday(todosByDate, todayKey);
+      streakCountEl.textContent = String(streak);
+    }
+
     function save() {
-      localStorage.setItem('todosByDate', JSON.stringify(todosByDate));
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(todosByDate));
       renderTodos();
+      renderCalendar();
+      calculateStats();
+    }
+
+    function prevMonth() {
+      current.setMonth(current.getMonth() - 1);
       renderCalendar();
     }
 
+    function nextMonth() {
+      current.setMonth(current.getMonth() + 1);
+      renderCalendar();
+    }
+
+    function toggleDark() {
+      document.body.classList.toggle('dark');
+      localStorage.setItem(DARK_KEY, document.body.classList.contains('dark') ? '1' : '0');
+    }
+
+    function loadTemplate() {
+      if (!selectedDate) {
+        templateSelectEl.value = '';
+        return;
+      }
+
+      const value = templateSelectEl.value;
+      if (!value || value === '__sep__') return;
+
+      const all = getAllTemplates();
+
+      let list = null;
+      if (value.startsWith('custom:')) {
+        const name = value.slice('custom:'.length);
+        list = (getCustomTemplates()[name] || null);
+      } else {
+        list = (all[value] || null);
+      }
+
+      if (!Array.isArray(list) || list.length === 0) return;
+
+      todosByDate[selectedDate] = list.map(x => ({ text: String(x), done: false }));
+      save();
+    }
+
+    // ---------------------------
+    // Custom Template Manager
+    // ---------------------------
+    function openTemplateManager() {
+      // Basic, reliable UX using prompts (works inside Notion embeds too).
+      // Behavior:
+      // - If a template name exists, user can overwrite or delete it.
+      // - Saves immediately and updates dropdown immediately.
+
+      const existing = getCustomTemplates();
+      const existingNames = Object.keys(existing);
+      const listStr = existingNames.length ? `\n\nExisting: ${existingNames.join(', ')}` : '';
+
+      const name = prompt(`Template name?${listStr}`);
+      if (!name) return;
+      const trimmed = name.trim();
+      if (!trimmed) return;
+
+      const already = Object.prototype.hasOwnProperty.call(existing, trimmed);
+      if (already) {
+        const action = prompt(`"${trimmed}" already exists. Type:\n- overwrite\n- delete\n- cancel`, 'overwrite');
+        if (!action) return;
+        const a = action.trim().toLowerCase();
+        if (a === 'delete') {
+          delete existing[trimmed];
+          setCustomTemplates(existing);
+          populateTemplateDropdown();
+          alert('Deleted.');
+          return;
+        }
+        if (a === 'cancel') return;
+        // otherwise overwrite
+      }
+
+      const tasks = prompt('Enter tasks separated by commas (e.g., Wake up, Water, Gym)');
+      if (!tasks) return;
+      const items = tasks.split(',').map(t => t.trim()).filter(Boolean);
+      if (!items.length) {
+        alert('No tasks provided.');
+        return;
+      }
+
+      existing[trimmed] = items;
+      setCustomTemplates(existing);
+      populateTemplateDropdown();
+
+      // select the newly created template in dropdown
+      templateSelectEl.value = `custom:${trimmed}`;
+      alert('Template saved!');
+    }
+
+    // Enter to add
+    newTodoInput.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter') addTodo();
+    });
+
+    // ---------------------------
+    // Tiny self-tests (console only)
+    // ---------------------------
+    function runTests() {
+      const sample = {
+        '2025-01-01': [{text:'a',done:true}],
+        '2025-01-02': [{text:'a',done:true},{text:'b',done:true}],
+        '2025-01-03': [{text:'a',done:false}],
+        '2025-01-20': [],
+      };
+      console.assert(isGreenDay(sample['2025-01-01']) === true, 'Test: green day');
+      console.assert(isGreenDay(sample['2025-01-03']) === false, 'Test: red day');
+      console.assert(computeMonthScore(sample, 2025, 0) === 67, 'Test: month score (2/3 green)');
+
+      const sample2 = {
+        '2025-01-01': [{text:'a',done:true}],
+        '2025-01-02': [{text:'a',done:true}],
+        '2025-01-03': [{text:'a',done:true}],
+        '2025-01-04': [{text:'a',done:false}],
+      };
+      console.assert(computeStreakEndingToday(sample2, '2025-01-03') === 3, 'Test: streak ending 1/3');
+      console.assert(computeStreakEndingToday(sample2, '2025-01-04') === 0, 'Test: streak breaks on red');
+
+      const sample3 = {
+        '2025-02-01': [{text:'a',done:true}],
+        '2025-02-02': [{text:'a',done:false}],
+      };
+      console.assert(computeMonthScore(sample3, 2025, 1) === 50, 'Test: month score 1/2');
+      console.assert(computeMonthScore(sample3, 2025, 0) === 0, 'Test: month score empty month');
+    }
+    runTests();
+
+    // initial render
+    populateTemplateDropdown();
     renderCalendar();
+    calculateStats();
   </script>
 </body>
 </html>
